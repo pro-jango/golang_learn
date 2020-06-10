@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: xxxx-prometheus-grafana
+  namespace: xx-xxxx
+  annotations:
+    nginx.ingress.kubernetes.io/upstream-fail-timeout: "10"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "10"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "10"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "5"
+    nginx.ingress.kubernetes.io/proxy-body-size: "2m"
+
+spec:
+  rules:
+    - host: prometheus.xxxx.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: xxxx-prometheus-grafana
+              servicePort: 9090
+    - host: grafana.xxxx.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: xxxx-prometheus-grafana
+              servicePort: 3000

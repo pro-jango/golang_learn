@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ${name}
+  namespace: ${namespace}
+  labels:
+    xxxxx-app: xxxxx-dyactive-api
+spec:
+  replicas: ${replicas}
+  template:
+    metadata:
+      labels:
+        xxxxx-app: xxxxx-dyactive-api
+      annotations:
+        xxxxx.prometheus.io.scrape: "true"
+        xxxxx.prometheus.io.port: "7002"
+        xxxxx.prometheus.io.path: "/metrics"
+    spec:
+      containers:
+      - name: xxxxx-dyactive-api
+        image: registry.xxxxx.cn/xxxxx/xxxx.xxxx.com:${version}
+      - name: prometheus-monitor
+        image: registry.xxxxx.cn/xxxxx/prometheus_monitor:v0.0.1
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        ports:
+          - containerPort: 7002
+

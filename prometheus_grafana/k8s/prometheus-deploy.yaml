@@ -1,0 +1,100 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: xxxxx-prometheus
+  namespace: xxxxx
+  labels:
+    xxxxx-app: xxxxx-prometheus
+spec:
+  replicas: 1 # 强制设置只有1份
+  template:
+    metadata:
+      labels:
+        xxxxx-app: xxxxx-prometheus
+    spec:
+      serviceAccountName: prometheus
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: cn-shanghai-f
+      initContainers:
+      - name: init-sysctl
+        image: registry.cn-hangzhou.aliyuncs.com/acs/busybox:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - |
+          sysctl -w net.core.somaxconn=65535
+          sysctl -w net.ipv4.tcp_max_syn_backlog=65535
+          sysctl -w net.ipv4.ip_local_port_range="1024 65535"
+          sysctl -w fs.file-max=1048576
+          sysctl -w fs.inotify.max_user_instances=16384
+          sysctl -w fs.inotify.max_user_watches=524288
+          sysctl -w fs.inotify.max_queued_events=16384
+        securityContext:
+          privileged: true
+      containers:
+        - name: xxxxx-prometheus
+          image: prom/prometheus:v2.15.1
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/prometheus"
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yaml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--storage.tsdb.retention.time=14d"
+            - "--web.enable-lifecycle"
+          ports:
+            - name: prometheus
+              containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - name: "xxxxx-prometheus-pvc"
+              mountPath: "/prometheus"
+            - name: "xxxxx-prometheus-grafana"
+              mountPath: "/etc/prometheus"
+          securityContext:
+            runAsUser: 0
+          resources:
+            requests:
+              cpu: 700m
+              memory: 8192Mi
+            limits:
+              cpu: 1000m
+              memory: 16384Mi
+        - name: xxxxx-grafana
+          image: grafana/grafana:6.4.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: grafana
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: GF_SECURITY_ADMIN_USER  # 账号
+              value: xxxxx
+            - name: GF_SECURITY_ADMIN_PASSWORD # 密码
+              value: xx131415
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: "xxxxx-prometheus-pvc"
+              mountPath: "/var/lib/grafana"
+      volumes:
+        - name:  xxxxx-prometheus-pvc
+          persistentVolumeClaim:
+            claimName: xxxxx-prometheus-pvc
+
+        - name: xxxxx-prometheus-grafana
+          configMap:
+            name: xxxxx-prometheus-grafana
+            items:
+              - key: prometheus.yaml
+                path: prometheus.yaml
+              - key: rules.yaml
+                path: rules.yaml
