@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
+	"net/url"
 	"sort"
 )
 
@@ -102,4 +103,23 @@ func Base64Decode(str string) ([]byte, error) {
 
 func HexEncodeStr(s string) string {
 	return hex.EncodeToString([]byte(s))
+}
+
+//QueryStringToMap convert url query string to a map structure
+func QueryStringToMap(query string) (ret map[string]string, err error) {
+
+	ret = make(map[string]string)
+	m, err := url.ParseQuery(query)
+
+	if err != nil {
+		return ret, err
+	}
+
+	for k, v := range m {
+		if len(v) > 0 {
+			ret[k] = v[0]
+		}
+	}
+
+	return ret, nil
 }
